@@ -26,7 +26,7 @@ if jd:
     results = run_agent(jd)
 
     # Build response
-    response = "### 🎯 Top Candidates:\n\n"
+    response = "### 🎯 Top 3 Candidates:\n\n"
 
     for r in results[:3]:
         response += f"""
