@@ -125,7 +125,7 @@ Real-time candidate sourcing (LinkedIn APIs)
 Email outreach automation
 Feedback-based model improvement
 
-** Author**
+**Author**
 
 Anusha H
 
