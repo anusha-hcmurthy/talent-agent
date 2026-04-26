@@ -58,21 +58,21 @@ Backend Engineer
 Prevents irrelevant candidates from ranking high
 5. Explainable AI Output
 
-Each recommendation includes:
+# Each recommendation includes:
 
 Matched skills
 Missing critical skills
 Experience alignment
 AI-generated reasoning
 
-👉 This improves trust and usability for recruiters
+# This improves trust and usability for recruiters
 
 6. Chatbot-Style Interface
 Interactive UI built using Streamlit
 Accepts natural language job descriptions
 Displays ranked candidates conversationally
 
-Example Use Case
+# Example Use Case
 🔹 Input
 Looking for Python Developer with Django and 2 years experience
 🔹 Output
@@ -85,12 +85,14 @@ Reason: Matched skills: Python, Django | Experience: 3 yrs
 Riya Gupta
 Match Score: 0.55
 Reason: Missing critical skill: Django
-🛠 Tech Stack
+
+# Tech Stack
 Python
 Streamlit (UI)
 Groq API (LLM)
 Pandas (data processing)
-📂 Project Structure
+
+# Project Structure
 talent-agent/
 ├── app.py                 # Streamlit UI
 ├── main.py                # Core AI + logic
@@ -98,31 +100,36 @@ talent-agent/
 │   └── candidates.csv     # Candidate dataset
 ├── requirements.txt
 └── README.md
-🚀 How to Run Locally
+
+# How to Run Locally
 pip install -r requirements.txt
 streamlit run app.py
-🌐 Live Demo
 
-👉 [Add your Streamlit URL here]
+# Live Demo
 
-📊 Design Decisions
+https://talent-agent-8ro7nnwx9dvwzu2i8uktbh.streamlit.app/
+
+# Design Decisions
 Used LLM only for unstructured tasks (JD parsing, interest reasoning)
 Kept scoring deterministic for reliability and control
 Introduced penalty-based scoring for realistic recruiter behavior
-🧠 Key Insights
+
+# Key Insights
 Matching alone is not sufficient — interest prediction improves hiring efficiency
 Explainability is critical for recruiter trust
 Hybrid AI + rule-based systems are more reliable than pure AI
-🚀 Future Enhancements
+
+# Future Enhancements
 Resume parsing integration
 Real-time candidate sourcing (LinkedIn APIs)
 Email outreach automation
 Feedback-based model improvement
 
-👤 Author
+# Author
+
 Anusha H
 
-📌 Conclusion
+# Conclusion
 
 This project demonstrates how AI can:
 
