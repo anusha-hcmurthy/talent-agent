@@ -109,6 +109,8 @@ streamlit run app.py
 
 https://talent-agent-8ro7nnwx9dvwzu2i8uktbh.streamlit.app/
 
+https://drive.google.com/drive/folders/15kjo9kBdEk3_rw6TvQEBVH-QOk0C51ub?usp=drive_link
+
 # Design Decisions
 Used LLM only for unstructured tasks (JD parsing, interest reasoning)
 Kept scoring deterministic for reliability and control
