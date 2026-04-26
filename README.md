@@ -126,7 +126,6 @@ Email outreach automation
 Feedback-based model improvement
 
 **Author**
-
 Anusha H
 
 # Conclusion
