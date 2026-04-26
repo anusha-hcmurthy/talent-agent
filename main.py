@@ -1,16 +1,23 @@
 import pandas as pd
 import re
+import os
 from groq import Groq
 
+# ---------- GROQ SETUP ----------
 api_key = os.getenv("GROQ_API_KEY")
 
-if not api_key:
-    raise ValueError("GROQ_API_KEY not found in environment")
+if api_key:
+    client = Groq(api_key=api_key)
+else:
+    client = None
+    print("WARNING: GROQ API KEY NOT FOUND - using fallback")
 
-client = Groq(api_key=api_key)
 
 # ---------- JD PARSER ----------
 def parse_jd(jd):
+    if not client:
+        return ["python", "sql"], 2  # fallback
+
     prompt = f"""
     Extract skills and years of experience from the job description.
 
@@ -22,27 +29,32 @@ def parse_jd(jd):
     {jd}
     """
 
-    response = client.chat.completions.create(
-        model="llama-3.1-8b-instant",
-        messages=[{"role": "user", "content": prompt}]
-    )
+    try:
+        response = client.chat.completions.create(
+            model="llama-3.1-8b-instant",
+            messages=[{"role": "user", "content": prompt}]
+        )
 
-    text = response.choices[0].message.content.lower()
+        text = response.choices[0].message.content.lower()
 
-    skills = []
-    if "skills:" in text:
-        skills_part = text.split("skills:")[1].split("\n")[0]
-        skills_part = re.sub(r"\d+\.\s*", "", skills_part)
-        skills = [s.strip() for s in skills_part.split(",") if s.strip()]
+        skills = []
+        if "skills:" in text:
+            skills_part = text.split("skills:")[1].split("\n")[0]
+            skills_part = re.sub(r"\d+\.\s*", "", skills_part)
+            skills = [s.strip() for s in skills_part.split(",") if s.strip()]
 
-    experience = 1
-    if "experience:" in text:
-        exp_part = text.split("experience:")[1]
-        digits = ''.join(filter(str.isdigit, exp_part))
-        if digits:
-            experience = int(digits)
+        experience = 1
+        if "experience:" in text:
+            exp_part = text.split("experience:")[1]
+            digits = ''.join(filter(str.isdigit, exp_part))
+            if digits:
+                experience = int(digits)
 
-    return skills, experience
+        return skills, experience
+
+    except Exception as e:
+        print("JD parsing error:", e)
+        return ["python", "sql"], 2
 
 
 # ---------- HELPER ----------
@@ -59,6 +71,7 @@ def calculate_match(candidate, jd_skills, jd_exp):
 
     skill_score = len(matched) / max(len(jd_skills), 1)
     exp_score = min(candidate["Experience"] / jd_exp, 1)
+
     jd_role_keywords = ["analyst", "developer", "engineer"]
 
     role_score = 0.6
@@ -72,17 +85,55 @@ def calculate_match(candidate, jd_skills, jd_exp):
     return round(match_score, 2), skill_score, list(matched)
 
 
-# ---------- INTEREST ----------
-def calculate_interest(candidate, match_score):
-    base = 0.5
+# ---------- AI INTEREST ----------
+def ai_interest_reasoning(candidate, jd):
+    if not client:
+        return 0.5, "Default interest (no API key)"
 
-    if "analyst" in candidate["Current Role"].lower():
-        base += 0.2
+    prompt = f"""
+    You are a recruiter assistant.
 
-    if match_score > 0.7:
-        base += 0.2
+    Given the job description and candidate profile, estimate:
+    1. Interest score (0 to 1)
+    2. Short reason
 
-    return round(min(base, 1), 2)
+    Job Description:
+    {jd}
+
+    Candidate:
+    Name: {candidate["Name"]}
+    Role: {candidate["Current Role"]}
+    Experience: {candidate["Experience"]}
+    Skills: {candidate["Skills"]}
+
+    Output format STRICTLY:
+    Score: 0.75
+    Reason: short explanation
+    """
+
+    try:
+        response = client.chat.completions.create(
+            model="llama-3.1-8b-instant",
+            messages=[{"role": "user", "content": prompt}]
+        )
+
+        text = response.choices[0].message.content.lower()
+
+        score = 0.5
+        match = re.search(r"score:\s*(\d*\.?\d+)", text)
+        if match:
+            score = float(match.group(1))
+
+        reason = "Moderate interest"
+        if "reason:" in text:
+            reason = text.split("reason:")[1].strip()
+
+        return round(min(score, 1), 2), reason
+
+    except Exception as e:
+        print("Interest AI error:", e)
+        return 0.5, "Fallback interest"
+
 
 # ---------- MAIN AGENT ----------
 def run_agent(jd):
@@ -107,51 +158,7 @@ def run_agent(jd):
             "interest_score": interest_score,
             "final_score": final_score,
             "reason": f"Matched skills: {', '.join(matched) if matched else 'None'} | Experience: {row['Experience']} yrs",
-    "interest_reason": interest_reason
-})
+            "interest_reason": interest_reason
+        })
 
     return sorted(results, key=lambda x: x["final_score"], reverse=True)
-
-import re
-
-def ai_interest_reasoning(candidate, jd):
-    prompt = f"""
-    You are a recruiter assistant.
-
-    Given the job description and candidate profile, estimate:
-    1. Interest score (0 to 1)
-    2. Short reason
-
-    Job Description:
-    {jd}
-
-    Candidate:
-    Name: {candidate["Name"]}
-    Role: {candidate["Current Role"]}
-    Experience: {candidate["Experience"]}
-    Skills: {candidate["Skills"]}
-
-    Output format STRICTLY:
-    Score: 0.75
-    Reason: short explanation
-    """
-
-    response = client.chat.completions.create(
-        model="llama-3.1-8b-instant",
-        messages=[{"role": "user", "content": prompt}]
-    )
-
-    text = response.choices[0].message.content.lower()
-
-    # ✅ FIXED score extraction
-    score = 0.5
-    match = re.search(r"score:\s*(\d*\.?\d+)", text)
-    if match:
-        score = float(match.group(1))
-
-    # ✅ Extract reason
-    reason = "Moderate interest"
-    if "reason:" in text:
-        reason = text.split("reason:")[1].strip()
-
-    return round(min(score, 1), 2), reason
